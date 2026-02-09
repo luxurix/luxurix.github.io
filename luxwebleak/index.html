@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>luxwebleak</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<h1>luxwebleak</h1>
+
+<div>
+    <h2>Upload Webhooks</h2>
+    <input type="file" id="fileInput">
+    <button onclick="uploadFile()">Upload</button>
+</div>
+
+<div>
+    <h2>Manual Webhook</h2>
+    <input type="text" id="manualWebhook" placeholder="Paste webhook URL">
+    <button onclick="addWebhook()">Add</button>
+</div>
+
+<div>
+    <h2>Webhooks List</h2>
+    <ul id="webhookList"></ul>
+</div>
+
+<script>
+let webhooks = []
+
+function renderList() {
+    const list = document.getElementById('webhookList')
+    list.innerHTML = ''
+    webhooks.forEach((wh, i) => {
+        const li = document.createElement('li')
+        li.textContent = wh
+        const infoBtn = document.createElement('button')
+        infoBtn.textContent = 'Info'
+        infoBtn.onclick = () => fetch(`/info?webhook=${encodeURIComponent(wh)}`).then(r => r.json()).then(d => alert(JSON.stringify(d)))
+        const termBtn = document.createElement('button')
+        termBtn.textContent = 'Terminate'
+        termBtn.onclick = () => fetch(`/terminate`, {
+            method: 'POST',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({webhook: wh})
+        }).then(r => r.json()).then(d => alert(d.status))
+        li.appendChild(infoBtn)
+        li.appendChild(termBtn)
+        list.appendChild(li)
+    })
+}
+
+function uploadFile() {
+    const file = document.getElementById('fileInput').files[0]
+    if (!file) return alert('select a file')
+    const reader = new FileReader()
+    reader.onload = () => {
+        const lines = reader.result.split(/\r?\n/).filter(l => l.trim())
+        webhooks.push(...lines)
+        renderList()
+    }
+    reader.readAsText(file)
+}
+
+function addWebhook() {
+    const url = document.getElementById('manualWebhook').value.trim()
+    if (!url) return
+    webhooks.push(url)
+    renderList()
+}
+</script>
+</body>
+</html>
